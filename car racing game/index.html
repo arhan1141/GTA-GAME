@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D Car Racing Game with Buttons</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 1;
+    }
+    .controls button {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      border: none;
+      border-radius: 10px;
+      background: #444;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="left">←</button>
+    <button id="up">↑</button>
+    <button id="down">↓</button>
+    <button id="right">→</button>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene, camera, renderer;
+let car;
+const keys = { forward: false, backward: false, left: false, right: false };
+const speed = 0.2;
+
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 5, -10);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(10, 20, 10);
+  scene.add(light);
+  scene.add(new THREE.AmbientLight(0x404040));
+
+  const roadGeometry = new THREE.PlaneGeometry(200, 20);
+  const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x2c2c2c });
+  const road = new THREE.Mesh(roadGeometry, roadMaterial);
+  road.rotation.x = -Math.PI / 2;
+  scene.add(road);
+
+  for (let i = -95; i < 95; i += 10) {
+    const lineGeometry = new THREE.BoxGeometry(1, 0.1, 0.2);
+    const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+    line.position.set(0, 0.01, i);
+    scene.add(line);
+  }
+
+  const boundaryMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+  const leftBoundary = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 200), boundaryMaterial);
+  const rightBoundary = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 200), boundaryMaterial);
+  leftBoundary.position.set(-10, 0.5, 0);
+  rightBoundary.position.set(10, 0.5, 0);
+  scene.add(leftBoundary, rightBoundary);
+
+  const carGeometry = new THREE.BoxGeometry(2, 1, 4);
+  const carMaterial = new THREE.MeshStandardMaterial({ color: 0x00aaff });
+  car = new THREE.Mesh(carGeometry, carMaterial);
+  car.position.y = 0.5;
+  scene.add(car);
+
+  // Desktop keyboard controls
+  document.addEventListener('keydown', (e) => {
+    switch (e.key.toLowerCase()) {
+      case 'w': keys.forward = true; break;
+      case 's': keys.backward = true; break;
+      case 'a': keys.left = true; break;
+      case 'd': keys.right = true; break;
+    }
+  });
+  document.addEventListener('keyup', (e) => {
+    switch (e.key.toLowerCase()) {
+      case 'w': keys.forward = false; break;
+      case 's': keys.backward = false; break;
+      case 'a': keys.left = false; break;
+      case 'd': keys.right = false; break;
+    }
+  });
+
+  // Mobile buttons
+  document.getElementById('up').addEventListener('touchstart', () => keys.forward = true);
+  document.getElementById('up').addEventListener('touchend', () => keys.forward = false);
+  document.getElementById('down').addEventListener('touchstart', () => keys.backward = true);
+  document.getElementById('down').addEventListener('touchend', () => keys.backward = false);
+  document.getElementById('left').addEventListener('touchstart', () => keys.left = true);
+  document.getElementById('left').addEventListener('touchend', () => keys.left = false);
+  document.getElementById('right').addEventListener('touchstart', () => keys.right = true);
+  document.getElementById('right').addEventListener('touchend', () => keys.right = false);
+
+  animate();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (keys.forward) car.position.z -= speed;
+  if (keys.backward) car.position.z += speed;
+  if (keys.left && car.position.x > -9) car.position.x -= speed;
+  if (keys.right && car.position.x < 9) car.position.x += speed;
+
+  camera.position.x = car.position.x;
+  camera.position.z = car.position.z - 10;
+  camera.lookAt(car.position);
+
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>
